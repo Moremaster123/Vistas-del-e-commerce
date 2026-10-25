@@ -1,0 +1,99 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <title>Tienda</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  </head>
+
+  <body class="bg-gray-100 text-gray-800">
+    <header class="bg-gray-700 text-white">
+      <div class="max-w-screen-lg mx-auto px-4 py-4 flex justify-between items-center">
+        <h1 class="text-xl font-bold">Tienda</h1>
+        <span>Carrito: {{ items|length }} producto{{ items|length|pluralize }}</span>
+      </div>
+    </header>
+
+    <main class="max-w-screen-lg mx-auto px-4 py-6">
+      {% if messages %}
+        <ul class="mb-6">
+          {% for message in messages %}
+            <li class="mb-2 px-4 py-2 rounded {% if message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">
+              {{ message }}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      <div class="grid gap-6 md:grid-cols-3">
+        <section class="md:col-span-2">
+          <h2 class="text-lg font-bold mb-4">Productos</h2>
+          <div class="grid gap-4 sm:grid-cols-2">
+            {% for producto in productos %}
+              <div class="bg-white rounded shadow p-4 flex flex-col">
+                <h3 class="font-semibold">{{ producto.nombre }}</h3>
+                <p class="text-sm text-gray-600 flex-1">{{ producto.descripcion }}</p>
+                <p class="font-bold my-2">${{ producto.precio }}</p>
+                <form method="post" action="{% url 'ventas:agregar' producto.id %}">
+                  {% csrf_token %}
+                  <button type="submit" class="w-full bg-gray-700 text-white rounded px-3 py-2">Agregar al carrito</button>
+                </form>
+              </div>
+            {% empty %}
+              <p>No hay productos disponibles.</p>
+            {% endfor %}
+          </div>
+        </section>
+
+        <aside>
+          <div class="bg-white rounded shadow p-4 mb-6">
+            <h2 class="text-lg font-bold mb-4">Carrito de compras</h2>
+            {% if items %}
+              <ul>
+                {% for item in items %}
+                  <li class="flex justify-between items-center border-b py-2">
+                    <span>{{ item.cantidad }} x {{ item.producto.nombre }}</span>
+                    <span class="flex items-center gap-2">
+                      ${{ item.subtotal }}
+                      <form method="post" action="{% url 'ventas:quitar' item.producto.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="text-red-600">Quitar</button>
+                      </form>
+                    </span>
+                  </li>
+                {% endfor %}
+              </ul>
+              <p class="font-bold text-right mt-4">Total: ${{ total }}</p>
+              <form method="post" action="{% url 'ventas:vaciar' %}" class="text-right mt-2">
+                {% csrf_token %}
+                <button type="submit" class="text-sm text-gray-600 underline">Vaciar carrito</button>
+              </form>
+            {% else %}
+              <p>Tu carrito está vacío.</p>
+            {% endif %}
+          </div>
+
+          <div class="bg-white rounded shadow p-4">
+            <h2 class="text-lg font-bold mb-4">Datos del pedido</h2>
+            <form method="post" action="{% url 'ventas:procesar_pedido' %}">
+              {% csrf_token %}
+              {% for field in form %}
+                <div class="mb-3">
+                  <label for="{{ field.id_for_label }}" class="block text-sm mb-1">{{ field.label }}</label>
+                  {{ field }}
+                  {% for error in field.errors %}
+                    <p class="text-sm text-red-600">{{ error }}</p>
+                  {% endfor %}
+                </div>
+              {% endfor %}
+              <button type="submit" class="w-full bg-green-600 text-white rounded px-3 py-2">Realizar pedido</button>
+            </form>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </body>
+</html>
